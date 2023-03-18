@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <title>AIタイトル結果</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">  
+        <link rel="stylesheet" href="/static/css/resultpage.css">
+        <link rel="stylesheet" href="/static/css/bootstrap.css">
+    </head>
+
+    <body>
+    <div class="bg_pattern">
+{% if outputname %}
+    <h1>AIが考えたタイトルはこちら！</h1>
+    <ul>
+        <li>{{ outputname[0] }}</li>
+        <li>{{ outputname[1] }}</li>
+        <li>{{ outputname[2] }}</li>
+        <li>{{ outputname[3] }}</li>
+        <li>{{ outputname[4] }}</li>
+    </ul>
+    <a href="./">トップへ戻る</a>
+{% else %}
+    <a href="./">トップへ戻る</a>
+{% endif %}
+    </div>
+    </body>
+</html>
+

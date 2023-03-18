@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>AIタイトル</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">  
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+  </head>
+  <body>
+    <style>
+      #wrapper {
+          text-align: center;
+      }
+      </style>
+    
+    <div class="bg"></div>
+    <div class="bg bg2"></div>
+    <div class="bg bg3"></div>
+    <div class="content">
+      <div id="wrapper">
+        <h1>『AIタイトル』</h1><br>
+          <h3>あなたの代わりにAIが<br>記事タイトルを作るよ！</h3><br>
+          <form method="post">
+              {{ forms.csrf_token }}
+      
+              {{ forms.InputFormTest.label }}<br>
+              {{ forms.InputFormTest }}<br>
+              <br>
+              {{ forms.Submit }}<br>
+      
+          </form>
+        
+      </div>
+    
+
+
+  </body>
+</html>
