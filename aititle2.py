@@ -22,6 +22,8 @@ from transformers import AdamW,get_linear_schedule_with_warmup
 
 from huggingface_hub import snapshot_download
 
+import pickle
+
 import logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -37,8 +39,10 @@ print("インポート完了")
 
 
 # 学習済みモデルをHugging Face model hubからダウンロードする
-model_dir_name = snapshot_download(repo_id="sonoisa/t5-qiita-title-generation")
-#model_dir_name = "sonoisa/t5-qiita-title-generation"
+#model_dir_name = snapshot_download(repo_id="sonoisa/t5-qiita-title-generation")
+with open('pytorch_model', 'rb') as p:
+    model_dir_name = pickle.load(p)
+
 
 # トークナイザー（SentencePiece）
 
