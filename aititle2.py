@@ -1,35 +1,44 @@
 # WEBスクレイピングに必要なライブラリをインストール
 
 
-import selenium
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+#import selenium
+#from selenium import webdriver
+#from selenium.webdriver.common.by import By
 import time
 import pandas as pd
 import openpyxl
 
-
 from flask import Flask,render_template, request  # request追加
 from wtforms import Form, StringField, validators, SubmitField
 
-from webdriver_manager.chrome import ChromeDriverManager
-#from selenium.webdriver.chrome.service import Service
+import requests
+from bs4 import BeautifulSoup
 
-#driver_path = "./chromedriver"
-
-
-print("インポート完了")
-
-
-# タイトル作成部分を追加する
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from transformers import AdamW,get_linear_schedule_with_warmup
 
+from huggingface_hub import snapshot_download
+
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+print("インポート完了")
+
+
+# タイトル作成部分を追加する
+
+
+
 # 学習済みモデルをHugging Face model hubからダウンロードする
-model_dir_name = "sonoisa/t5-qiita-title-generation"
+model_dir_name = snapshot_download(repo_id="sonoisa/t5-qiita-title-generation")
+#model_dir_name = "sonoisa/t5-qiita-title-generation"
 
 # トークナイザー（SentencePiece）
 
@@ -134,67 +143,42 @@ def postprocess_title(title):
 #WEBスクレイピングの部分を関数化
 
 def webscr(keywords):
-    INTERVAL = 2.0
     
-    options = webdriver.ChromeOptions()
-
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-extensions') 
+    INTERVAL = "2"
+    INTERVAL=int(INTERVAL)
     
-    #service = Service(executable_path=driver_path)
-    driver = webdriver.Chrome(ChromeDriverManager().install(),executable_path='./chromedriver',options=options)
-
-    driver.get('https://www.google.com/')       # Googleを開く
-
-    search = driver.find_element_by_name("q")   # HTML内で検索ボックス(name='q')を指定する
-    # driver.find_element(By.CLASS_NAME, 'q')
+    pages_num = 10 + 1
     
-    search.send_keys(keywords)    # 検索ワードを送信する
+    url = f'https://www.google.co.jp/search?hl=ja&num={pages_num}&q={keywords}'
+    req = requests.get(url)
     
-    #Google検索ボタンをクリック
-    search.submit()                         # 検索を実行
     time.sleep(INTERVAL)
-    print("2秒待ちな") 
     
-    #検索結果の一覧を取得する
+    #logging.debug('req.text='+str(req.text))
+    soup = BeautifulSoup(req.text, "html.parser")
+    
+    #logging.debug('soup='+str(soup))
+    search_site_list = soup.select('div.kCrYT > a')
+    logging.debug('search_site_list='+str(search_site_list))
+    
     titles = []
-    links = []
-    
-    result = {
-    'タイトル': titles,
-    'URL': links
-    }
-    
-    flag = False
-    while True:
-        elems_h3 = driver.find_elements_by_xpath('//a/h3')
-        for elem_h3 in elems_h3:
-            link = elem_h3.find_element_by_xpath('..').get_attribute('href')
-            title = elem_h3.text
+    for rank, site in zip(range(1, pages_num), search_site_list):
+        try:
+            logging.debug('site='+str(site))
+            logging.debug('len='+str(len(site.select('h3.zBAuLc'))))
+            site_title = site.select('h3.zBAuLc')[0].text
+            titles.append(site_title)
             
-            if not elem_h3.text == '':
-                titles.append(title)
-                links.append(link)
-        
-                
-            if len(titles) >= 10: #抽出する件数を指定
-                flag = True
-                break
-        if flag:
-            break
-        driver.find_element_by_id('pnnext').click()
-        time.sleep(INTERVAL)
-    driver.quit() 
-    
+            logging.debug('titles='+ str(titles))
+        except IndexError:
+            
+            site_title = site.select('img')[0]['alt']
+        site_url = site['href'].replace('/url?q=', '')
     return titles
-    return links
-    return result
-    
 
-def make_material(titles):
-    material = '.'.join(titles)  # スクレイピングしてきたタイトルを改行して1つの文章にする
-    
+def make_material(mate_titles):
+    material = '.'.join(mate_titles)  # スクレイピングしてきたタイトルを改行して1つの文章にする
+    logging.debug('MATERIAL='+ str(material))
     print(material)
     return material
 
@@ -246,6 +230,7 @@ def create_title(material):
     for i, title in enumerate(generated_title):
         print(f"{i+1:2}. {postprocess_title(title)}")
         ai_title.append({postprocess_title(title)})
+        logging.debug('AI_titles='+ str(ai_title))
     return ai_title
 
 
@@ -282,15 +267,18 @@ def input():
         # 正常に動いた場合
         else:
             search_key = request.form['InputFormTest']
+            logging.debug('SEARCH_KEY='+ str(search_key))
             title_sum = webscr(keywords=search_key)
-            mate = make_material(titles=title_sum)
+            logging.debug('TITLE_SUM='+ str(title_sum))
+            mate = make_material(mate_titles=title_sum)
+            logging.debug('MATERIAL='+ str(mate))
             ai_title = create_title(material=mate)
+            #logging.debug('AI_titles='+ str(ai_title))
             return render_template('result.html', outputname=ai_title)
 
     # GET メソッドの定義　初回のページ
     elif request.method == 'GET':
         return render_template('index.html', forms=form)
-
 
 
 
