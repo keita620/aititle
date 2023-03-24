@@ -40,7 +40,7 @@ print("インポート完了")
 
 # 学習済みモデルをHugging Face model hubからダウンロードする
 #model_dir_name = snapshot_download(repo_id="sonoisa/t5-qiita-title-generation")
-with open('pytorch_model', 'rb') as p:
+with open('pytorch_model.bin', 'rb') as p:
     model_dir_name = pickle.load(p)
 
 
